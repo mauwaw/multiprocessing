@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import requests
 import logging
+import time
 
 app = FastAPI()
 
@@ -62,6 +63,7 @@ CLIENT_PORT = 6780
 INDEKS = 12
 
 def function(queue : Queue):
+
     global result
     result = [0] * 500000 # w przypadku duzej liczby danych powinno być zwiększane!
     global day_readings
@@ -77,7 +79,7 @@ def function(queue : Queue):
     number_of_wokers = 1
 
     workers = [threading.Thread(target=process, args=(queue, )) for i in range(0,number_of_wokers)] # w docelowym rozwiązaniu musisz zastosować multiprocessing.Process
-
+    start_time = time.time()
     for w in workers:
         w.start()
 
@@ -121,7 +123,9 @@ def function(queue : Queue):
 
     requests.post(f"http://{SERVER_IP}:{SERVER_PORT}/results",
                   json={"ip_addr": CLIENT_IP, "port": CLIENT_PORT, "indeks": INDEKS, "aggregates": wynik})
-
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    logging.info(f"Czas wykonania: {elapsed_time:.2f} sekund")
 
 def process(queue: Queue):
     while True:

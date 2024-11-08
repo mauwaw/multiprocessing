@@ -60,7 +60,7 @@ SERVER_PORT = 5670
 CLIENT_IP = 'localhost'
 CLIENT_PORT = 6780
 
-INDEKS = 12
+INDEKS = 450733
 
 def function(queue : Queue):
 

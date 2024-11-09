@@ -78,7 +78,7 @@ def function(queue : Queue):
 
     number_of_wokers = 1
 
-    workers = [multiprocessing.Process(target=process, args=(queue, )) for i in range(0,number_of_wokers)] # w docelowym rozwiązaniu musisz zastosować multiprocessing.Process
+    workers = [threading.Thread(target=process, args=(queue, )) for i in range(0,number_of_wokers)] # w docelowym rozwiązaniu musisz zastosować multiprocessing.Process
     start_time = time.time()
     for w in workers:
         w.start()

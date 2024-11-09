@@ -64,21 +64,19 @@ INDEKS = 450733
 
 def function(queue : Queue):
 
-    global result
-    result = [0] * 500000 # w przypadku duzej liczby danych powinno być zwiększane!
-    global day_readings
-    day_readings = [0] * 500
-    global day_mode
-    day_mode = [0] * 21 * 500
+    result = multiprocessing.Array('f', [0] * 500000)  # Shared array for results
+    day_readings = multiprocessing.Array('f', [0] * 500)  # Shared array for day readings
+    day_mode = multiprocessing.Array('f', [0] * (21 * 500))  # Shared array for day mode data
 
-    global days
-    days = set()
+    # Using Manager to create shared data structures for more complex data types
+    manager = multiprocessing.Manager()
+    days = manager.list()  # Shared set for tracking days
 
     DATA_TYPES = ['HUM', 'TEMP', 'LIGHT', 'PRESS', 'PREC']
 
     number_of_wokers = 1
 
-    workers = [threading.Thread(target=process, args=(queue, )) for i in range(0,number_of_wokers)] # w docelowym rozwiązaniu musisz zastosować multiprocessing.Process
+    workers = [threading.Thread(target=process, args=(queue,  days, result, day_readings, day_mode,  )) for i in range(0,number_of_wokers)] # w docelowym rozwiązaniu musisz zastosować multiprocessing.Process
     start_time = time.time()
     for w in workers:
         w.start()
@@ -127,13 +125,8 @@ def function(queue : Queue):
     elapsed_time = end_time - start_time
     logging.info(f"Czas wykonania: {elapsed_time:.2f} sekund")
 
-def process(queue: Queue):
+def process(queue: Queue, days, result, day_readings, day_mode ):
     while True:
-        global days
-        global result
-        global day_readings
-        global day_mode
-
         #logging.info(f'{dataCounter.value} + {multiprocessing.current_process()}')
         # każdy wątek pobiera z kolejki aż skończą się dane
         if queue.empty():
@@ -144,7 +137,7 @@ def process(queue: Queue):
         day_mode[(Type.get(data.data_type) + data.day*len(Type))*21 + data.val] +=1
 
         if data.day not in days:
-            days.add(data.day)
+            days.append(data.day)
 
         result[Help.get(data.data_type + '_COUNT') + data.day*len(Help)] += 1
         #print(data.data_type + ' ' + str(data.day) + ' '  + str(data.val))

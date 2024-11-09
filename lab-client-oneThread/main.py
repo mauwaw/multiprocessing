@@ -67,7 +67,10 @@ def function(queue : Queue):
     result = multiprocessing.Array('f', [0] * 500000)  # Shared array for results
     day_readings = multiprocessing.Array('f', [0] * 500)  # Shared array for day readings
     day_mode = multiprocessing.Array('f', [0] * (21 * 500))  # Shared array for day mode data
-    lock = multiprocessing.Lock()
+    days_lock = multiprocessing.Lock()
+    mode_lock = multiprocessing.Lock()
+    result_loc = multiprocessing.Lock()
+    readings_lock = multiprocessing.Lock()
     # Using Manager to create shared data structures for more complex data types
     manager = multiprocessing.Manager()
     days = manager.list()  # Shared set for tracking days
@@ -76,7 +79,7 @@ def function(queue : Queue):
 
     number_of_wokers = 1
 
-    workers = [threading.Thread(target=process, args=(queue,  days, result, day_readings, day_mode, lock,  )) for i in range(0,number_of_wokers)] # w docelowym rozwiązaniu musisz zastosować multiprocessing.Process
+    workers = [threading.Thread(target=process, args=(queue, days, result, day_readings, day_mode, days_lock, readings_lock, mode_lock, result_loc)) for i in range(0,number_of_wokers)] # w docelowym rozwiązaniu musisz zastosować multiprocessing.Process
     start_time = time.time()
     for w in workers:
         w.start()
@@ -125,20 +128,32 @@ def function(queue : Queue):
     elapsed_time = end_time - start_time
     logging.info(f"Czas wykonania: {elapsed_time:.2f} sekund")
 
-def process(queue, days, result, day_readings, day_mode, lock):
+def process(queue, days, result, day_readings, day_mode, days_lock, readings_lock, mode_lock, result_lock):
     while True:
         if queue.empty():
             break
         data = queue.get()
-        with lock:
+
+        # Lock for modifying the `days` list
+        with days_lock:
             if data.day not in days:
                 days.append(data.day)
+        
+        # Lock for modifying `day_readings`
+        with readings_lock:
             day_readings[data.day] += 1
+        
+        # Lock for modifying `day_mode`
+        with mode_lock:
             day_mode[(Type.get(data.data_type) + data.day * len(Type)) * 21 + data.val] += 1
+        
+        # Lock for modifying `result`
+        with result_lock:
             result[Help.get(data.data_type + '_COUNT') + data.day * len(Help)] += 1
             result[Help.get(data.data_type + '_AVG') + data.day * len(Help)] += data.val
 
     return result
+
 
 # nie zmieniać
 @app.post("/sensor-data", status_code=201)

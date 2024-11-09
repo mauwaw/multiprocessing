@@ -67,7 +67,7 @@ def function(queue : Queue):
     result = multiprocessing.Array('f', [0] * 500000)  # Shared array for results
     day_readings = multiprocessing.Array('f', [0] * 500)  # Shared array for day readings
     day_mode = multiprocessing.Array('f', [0] * (21 * 500))  # Shared array for day mode data
-
+    lock = multiprocessing.Lock()
     # Using Manager to create shared data structures for more complex data types
     manager = multiprocessing.Manager()
     days = manager.list()  # Shared set for tracking days
@@ -76,7 +76,7 @@ def function(queue : Queue):
 
     number_of_wokers = 1
 
-    workers = [threading.Thread(target=process, args=(queue,  days, result, day_readings, day_mode,  )) for i in range(0,number_of_wokers)] # w docelowym rozwiązaniu musisz zastosować multiprocessing.Process
+    workers = [threading.Thread(target=process, args=(queue,  days, result, day_readings, day_mode, lock,  )) for i in range(0,number_of_wokers)] # w docelowym rozwiązaniu musisz zastosować multiprocessing.Process
     start_time = time.time()
     for w in workers:
         w.start()
@@ -125,23 +125,18 @@ def function(queue : Queue):
     elapsed_time = end_time - start_time
     logging.info(f"Czas wykonania: {elapsed_time:.2f} sekund")
 
-def process(queue: Queue, days, result, day_readings, day_mode ):
+def process(queue, days, result, day_readings, day_mode, lock):
     while True:
-        #logging.info(f'{dataCounter.value} + {multiprocessing.current_process()}')
-        # każdy wątek pobiera z kolejki aż skończą się dane
         if queue.empty():
             break
         data = queue.get()
-
-        day_readings[data.day] = day_readings[data.day] + 1
-        day_mode[(Type.get(data.data_type) + data.day*len(Type))*21 + data.val] +=1
-
-        if data.day not in days:
-            days.append(data.day)
-
-        result[Help.get(data.data_type + '_COUNT') + data.day*len(Help)] += 1
-        #print(data.data_type + ' ' + str(data.day) + ' '  + str(data.val))
-        result[Help.get(data.data_type + '_AVG') + data.day * len(Help)] += data.val
+        with lock:
+            if data.day not in days:
+                days.append(data.day)
+            day_readings[data.day] += 1
+            day_mode[(Type.get(data.data_type) + data.day * len(Type)) * 21 + data.val] += 1
+            result[Help.get(data.data_type + '_COUNT') + data.day * len(Help)] += 1
+            result[Help.get(data.data_type + '_AVG') + data.day * len(Help)] += data.val
 
     return result
 

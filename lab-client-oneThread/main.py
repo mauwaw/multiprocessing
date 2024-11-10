@@ -128,31 +128,78 @@ def function(queue : Queue):
     elapsed_time = end_time - start_time
     logging.info(f"Czas wykonania: {elapsed_time:.2f} sekund")
 
-def process(queue, days, result, day_readings, day_mode, days_lock, readings_lock, mode_lock, result_lock):
+import logging
+from collections import defaultdict
+from multiprocessing import current_process, Process, Queue
+from queue import Empty
+
+# Configure logging
+# logging.basicConfig(level=logging.DEBUG, format='%(processName)s - %(levelname)s - %(message)s')
+
+def process(queue, days, result, day_readings, day_mode, days_lock, result_lock, readings_lock, mode_lock):
+    process_name = current_process().name
+    local_days = set()
+    local_day_readings = defaultdict(float)
+    local_day_mode = defaultdict(float)
+    local_result = defaultdict(float)
+
+    logging.debug(f"{process_name}: Process started.")
+    count = 0
     while True:
-        if queue.empty():
+        try:
+            data = queue.get_nowait()
+            # logging.debug(f"{process_name}: Data retrieved from queue: {data}")
+        except Empty:
+            logging.debug(f"{process_name}: Queue is empty, stopping process.")
             break
-        data = queue.get()
+        count += 1
+        # Collect local days
+        local_days.add(data.day)
+        # logging.debug(f"{process_name}: Added day to local_days: {data.day}")
+        
+        # Update local day_readings
+        local_day_readings[data.day] += 1
+        # logging.debug(f"{process_name}: Updated local_day_readings for day {data.day}: {local_day_readings[data.day]}")
 
-        # Lock for modifying the `days` list
-        with days_lock:
-            if data.day not in days:
-                days.append(data.day)
-        
-        # Lock for modifying `day_readings`
-        with readings_lock:
-            day_readings[data.day] += 1
-        
-        # Lock for modifying `day_mode`
-        with mode_lock:
-            day_mode[(Type.get(data.data_type) + data.day * len(Type)) * 21 + data.val] += 1
-        
-        # Lock for modifying `result`
-        with result_lock:
-            result[Help.get(data.data_type + '_COUNT') + data.day * len(Help)] += 1
-            result[Help.get(data.data_type + '_AVG') + data.day * len(Help)] += data.val
+        # Update local day_mode
+        key = (Type.get(data.data_type) + data.day * len(Type)) * 21 + data.val
+        local_day_mode[key] += 1
+        # logging.debug(f"{process_name}: Updated local_day_mode for key {key}: {local_day_mode[key]}")
 
-    return result
+        # Update local result
+        local_result[Help.get(data.data_type + '_COUNT') + data.day * len(Help)] += 1
+        local_result[Help.get(data.data_type + '_AVG') + data.day * len(Help)] += data.val
+        # logging.debug(f"{process_name}: Updated local_result for keys COUNT and AVG: {local_result}")
+
+    # Combine local results into shared data structures
+    # logging.debug(f"{process_name}: Combining local results into shared data structures.")
+
+    # Lock for modifying the days list
+    with days_lock:
+        for day in local_days:
+            if day not in days:
+                days.append(day)
+                # logging.debug(f"{process_name}: Added day to shared days list: {day}")
+
+    # Lock for modifying day_readings
+    with readings_lock:
+        for day, count in local_day_readings.items():
+            day_readings[day] += count
+            # logging.debug(f"{process_name}: Updated shared day_readings for day {day}: {day_readings[day]}")
+
+    # Lock for modifying day_mode
+    with mode_lock:
+        for key, count in local_day_mode.items():
+            day_mode[key] += count
+            # logging.debug(f"{process_name}: Updated shared day_mode for key {key}: {day_mode[key]}")
+
+    # Lock for modifying result
+    with result_lock:
+        for key, value in local_result.items():
+            result[key] += value
+            # logging.debug(f"{process_name}: Updated shared result for key {key}: {result[key]}")
+
+    logging.debug(f"{process_name}: Process completed, items:{count}")
 
 
 # nie zmieniać

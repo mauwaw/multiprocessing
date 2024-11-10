@@ -144,7 +144,7 @@ def process(queue, days, result, day_readings, day_mode, days_lock, result_lock,
     local_result = defaultdict(float)
 
     logging.debug(f"{process_name}: Process started.")
-    count = 0
+    countitem = 0
     while True:
         try:
             data = queue.get_nowait()
@@ -152,7 +152,7 @@ def process(queue, days, result, day_readings, day_mode, days_lock, result_lock,
         except Empty:
             logging.debug(f"{process_name}: Queue is empty, stopping process.")
             break
-        count += 1
+        countitem += 1
         # Collect local days
         local_days.add(data.day)
         # logging.debug(f"{process_name}: Added day to local_days: {data.day}")
@@ -199,7 +199,7 @@ def process(queue, days, result, day_readings, day_mode, days_lock, result_lock,
             result[key] += value
             # logging.debug(f"{process_name}: Updated shared result for key {key}: {result[key]}")
 
-    logging.debug(f"{process_name}: Process completed, items:{count}")
+    logging.debug(f"{process_name}: Process completed, items:{countitem}")
 
 
 # nie zmieniać

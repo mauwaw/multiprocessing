@@ -64,7 +64,7 @@ INDEKS = 450733
 
 def function(queue : Queue):
 
-    result = multiprocessing.Array('f', [0] * 500000)  # Shared array for results
+    result = multiprocessing.Array('d', [0] * 500000)  # Shared array for results
     day_readings = multiprocessing.Array('f', [0] * 500)  # Shared array for day readings
     day_mode = multiprocessing.Array('f', [0] * (21 * 500))  # Shared array for day mode data
     days_lock = multiprocessing.Lock()
@@ -77,7 +77,7 @@ def function(queue : Queue):
 
     DATA_TYPES = ['HUM', 'TEMP', 'LIGHT', 'PRESS', 'PREC']
 
-    number_of_wokers = 1
+    number_of_wokers = 2
 
     workers = [multiprocessing.Process(target=process, args=(queue, days, result, day_readings, day_mode, days_lock, readings_lock, mode_lock, result_loc)) for i in range(0,number_of_wokers)] # w docelowym rozwiązaniu musisz zastosować multiprocessing.Process
     start_time = time.time()

@@ -303,3 +303,47 @@
 2024-11-08 12:51:09,654 - urllib3.connectionpool - DEBUG - http://localhost:6780 "POST /sensor-data HTTP/1.1" 201 4
 2024-11-08 12:51:09,707 - root - INFO - Finished sending data
 2024-11-08 12:51:13,413 - root - INFO - Successfully saved the result into 12.txt file
+2024-11-10 13:20:01,181 - root - INFO - Successfully generated 2881 data points for ip_addr='localhost' port=6780 indeks=450733
+2024-11-10 13:20:01,182 - root - INFO - Registered localhost client successfully! # available clients: 1
+2024-11-10 13:20:02,624 - root - INFO - Starting sending data
+2024-11-10 13:20:03,008 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): localhost:6780
+2024-11-10 13:20:05,232 - urllib3.connectionpool - DEBUG - http://localhost:6780 "POST /sensor-data HTTP/1.1" 201 4
+2024-11-10 13:20:05,285 - root - INFO - Finished sending data
+2024-11-10 13:20:17,371 - root - INFO - Successfully saved the result into 450733.txt file
+2024-11-10 13:23:37,448 - root - INFO - Starting sending data
+2024-11-10 13:23:37,655 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): localhost:6780
+2024-11-10 13:23:40,056 - urllib3.connectionpool - DEBUG - http://localhost:6780 "POST /sensor-data HTTP/1.1" 201 4
+2024-11-10 13:23:40,109 - root - INFO - Finished sending data
+2024-11-10 13:23:52,835 - root - INFO - Successfully saved the result into 450733.txt file
+2024-11-10 13:25:00,208 - root - INFO - Starting sending data
+2024-11-10 13:25:00,523 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): localhost:6780
+2024-11-10 13:25:02,799 - urllib3.connectionpool - DEBUG - http://localhost:6780 "POST /sensor-data HTTP/1.1" 201 4
+2024-11-10 13:25:02,851 - root - INFO - Finished sending data
+2024-11-10 13:25:11,886 - root - INFO - Successfully saved the result into 450733.txt file
+2024-11-10 13:25:26,118 - root - INFO - Starting sending data
+2024-11-10 13:25:26,472 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): localhost:6780
+2024-11-10 13:25:28,769 - urllib3.connectionpool - DEBUG - http://localhost:6780 "POST /sensor-data HTTP/1.1" 201 4
+2024-11-10 13:25:28,823 - root - INFO - Finished sending data
+2024-11-10 13:25:38,252 - root - INFO - Successfully saved the result into 450733.txt file
+2024-11-10 13:25:45,086 - root - INFO - Starting sending data
+2024-11-10 13:25:45,272 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): localhost:6780
+2024-11-10 13:25:47,839 - urllib3.connectionpool - DEBUG - http://localhost:6780 "POST /sensor-data HTTP/1.1" 201 4
+2024-11-10 13:25:47,891 - root - INFO - Finished sending data
+2024-11-10 13:25:56,706 - root - INFO - Successfully saved the result into 450733.txt file
+2024-11-10 13:26:07,917 - root - INFO - Starting sending data
+2024-11-10 13:26:08,427 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): localhost:6780
+2024-11-10 13:26:10,599 - urllib3.connectionpool - DEBUG - http://localhost:6780 "POST /sensor-data HTTP/1.1" 201 4
+2024-11-10 13:26:10,652 - root - INFO - Finished sending data
+2024-11-10 13:26:22,988 - root - INFO - Successfully saved the result into 450733.txt file
+2024-11-10 13:26:49,733 - root - INFO - Starting sending data
+2024-11-10 13:26:50,014 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): localhost:6780
+2024-11-10 13:26:52,220 - urllib3.connectionpool - DEBUG - http://localhost:6780 "POST /sensor-data HTTP/1.1" 201 4
+2024-11-10 13:26:52,272 - root - INFO - Finished sending data
+2024-11-10 13:26:59,896 - root - INFO - Successfully saved the result into 450733.txt file
+2024-11-10 14:12:02,298 - root - INFO - Successfully generated 2881 data points for ip_addr='localhost' port=6780 indeks=450733
+2024-11-10 14:12:02,299 - root - INFO - Registered localhost client successfully! # available clients: 1
+2024-11-10 14:12:03,888 - root - INFO - Starting sending data
+2024-11-10 14:12:04,022 - urllib3.connectionpool - DEBUG - Starting new HTTP connection (1): localhost:6780
+2024-11-10 14:12:06,181 - urllib3.connectionpool - DEBUG - http://localhost:6780 "POST /sensor-data HTTP/1.1" 201 4
+2024-11-10 14:12:06,234 - root - INFO - Finished sending data
+2024-11-10 14:12:12,074 - root - INFO - Successfully saved the result into 450733.txt file

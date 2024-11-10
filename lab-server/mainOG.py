@@ -126,6 +126,7 @@ def function(queue : Queue):
     logging.info(f"Czas wykonania: {elapsed_time:.2f} sekund")
 
 def process(queue: Queue):
+    count = 0
     while True:
         global days
         global result
@@ -137,7 +138,7 @@ def process(queue: Queue):
         if queue.empty():
             break
         data = queue.get()
-
+        count += 1
         day_readings[data.day] = day_readings[data.day] + 1
         day_mode[(Type.get(data.data_type) + data.day*len(Type))*21 + data.val] +=1
 
@@ -148,6 +149,7 @@ def process(queue: Queue):
         #print(data.data_type + ' ' + str(data.day) + ' '  + str(data.val))
         result[Help.get(data.data_type + '_AVG') + data.day * len(Help)] += data.val
 
+    logging.info(f"Items: {count}")
     return result
 
 # nie zmieniać

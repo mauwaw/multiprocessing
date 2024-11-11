@@ -78,7 +78,7 @@ def function(queue : Queue):
     DATA_TYPES = ['HUM', 'TEMP', 'LIGHT', 'PRESS', 'PREC']
 
     number_of_wokers = 2
-
+    logging.info(f'Workers : {number_of_wokers}')
     workers = [multiprocessing.Process(target=process, name = str(i+1), args=(queue, days, result, day_readings, day_mode, days_lock, readings_lock, mode_lock, result_loc)) for i in range(0,number_of_wokers)] # w docelowym rozwiązaniu musisz zastosować multiprocessing.Process
     start_time = time.time()
     for w in workers:
@@ -144,7 +144,10 @@ def process(queue, days, result, day_readings, day_mode, days_lock, result_lock,
     process_name = current_process().name
     logging.debug(f"{process_name}: Process started.")
     countitem = 0
-
+    local_days = set()
+    local_day_readings = defaultdict(float)
+    local_day_mode = defaultdict(float)
+    local_result = defaultdict(float)
     while True:
         try:
             data = queue.get(timeout = 0.1)
@@ -154,31 +157,50 @@ def process(queue, days, result, day_readings, day_mode, days_lock, result_lock,
 
         countitem += 1
 
-        # Lock for modifying the days list
-        with days_lock:
-            if data.day not in days:
-                days.append(data.day)
-                # logging.debug(f"{process_name}: Added day to shared days list: {data.day}")
+      # Collect local days
+        local_days.add(data.day)
+        # logging.debug(f"{process_name}: Added day to local_days: {data.day}")
+        
+        # Update local day_readings
+        local_day_readings[data.day] += 1
+        # logging.debug(f"{process_name}: Updated local_day_readings for day {data.day}: {local_day_readings[data.day]}")
 
-        # Lock for modifying day_readings
-        with readings_lock:
-            day_readings[data.day] += 1
-            # logging.debug(f"{process_name}: Updated shared day_readings for day {data.day}: {day_readings[data.day]}")
+        # Update local day_mode
+        key = (Type.get(data.data_type) + data.day * len(Type)) * 21 + data.val
+        local_day_mode[key] += 1
+        # logging.debug(f"{process_name}: Updated local_day_mode for key {key}: {local_day_mode[key]}")
 
-        # Lock for modifying day_mode
-        with mode_lock:
-            key = (Type.get(data.data_type) + data.day * len(Type)) * 21 + data.val
-            day_mode[key] += 1
+        # Update local result
+        local_result[Help.get(data.data_type + '_COUNT') + data.day * len(Help)] += 1
+        local_result[Help.get(data.data_type + '_AVG') + data.day * len(Help)] += data.val
+        # logging.debug(f"{process_name}: Updated local_result for keys COUNT and AVG: {local_result}")
+
+    # Combine local results into shared data structures
+    logging.debug(f"Count item {countitem}")
+
+    # Lock for modifying the days list
+    with days_lock:
+        for day in local_days:
+            if day not in days:
+                days.append(day)
+                # logging.debug(f"{process_name}: Added day to shared days list: {day}")
+
+    # Lock for modifying day_readings
+    with readings_lock:
+        for day, count in local_day_readings.items():
+            day_readings[day] += count
+            # logging.debug(f"{process_name}: Updated shared day_readings for day {day}: {day_readings[day]}")
+
+    # Lock for modifying day_mode
+    with mode_lock:
+        for key, count in local_day_mode.items():
+            day_mode[key] += count
             # logging.debug(f"{process_name}: Updated shared day_mode for key {key}: {day_mode[key]}")
 
-        # Lock for modifying result
-        with result_lock:
-            result[Help.get(data.data_type + '_COUNT') + data.day * len(Help)] += 1
-            result[Help.get(data.data_type + '_AVG') + data.day * len(Help)] += data.val
-            # logging.debug(f"{process_name}: Updated shared result for keys COUNT and AVG: {result}")
-    logging.debug(f"{process_name}: finish{countitem}")
-
-
+    with result_lock:
+            for key, value in local_result.items():
+                result[key] += value
+                # logging.debug(f"{process_name}: Updated shared result for key {key}: {result[key]}")   
 # nie zmieniać
 @app.post("/sensor-data", status_code=201)
 async def create_sensor_data(sensor_data_entry: List[SensorDataEntry]):

@@ -1,13 +1,12 @@
 import multiprocessing
 import threading
 from multiprocessing import Queue
-
+import time
 from typing import List
 from fastapi import FastAPI
 from pydantic import BaseModel
 import requests
 import logging
-import time
 
 app = FastAPI()
 
@@ -64,22 +63,18 @@ INDEKS = 450733
 
 def function(queue : Queue):
 
-    result = multiprocessing.Array('d', [0] * 500000)  # Shared array for results
-    day_readings = multiprocessing.Array('f', [0] * 500)  # Shared array for day readings
-    day_mode = multiprocessing.Array('f', [0] * (21 * 500))  # Shared array for day mode data
-    days_lock = multiprocessing.Lock()
-    mode_lock = multiprocessing.Lock()
-    result_loc = multiprocessing.Lock()
-    readings_lock = multiprocessing.Lock()
-    # Using Manager to create shared data structures for more complex data types
+    result = multiprocessing.Array('d', [0] * 500000)
+    day_readings = multiprocessing.Array('f', [0] * 500)
+    day_mode = multiprocessing.Array('f', [0] * (21 * 500))
+    lock = multiprocessing.Lock()
     manager = multiprocessing.Manager()
-    days = manager.list()  # Shared set for tracking days
+    days = manager.list()
 
     DATA_TYPES = ['HUM', 'TEMP', 'LIGHT', 'PRESS', 'PREC']
 
-    number_of_wokers = 2
+    number_of_wokers = 1
     logging.info(f'Workers : {number_of_wokers}')
-    workers = [multiprocessing.Process(target=process, name = str(i+1), args=(queue, days, result, day_readings, day_mode, days_lock, readings_lock, mode_lock, result_loc)) for i in range(0,number_of_wokers)] # w docelowym rozwiązaniu musisz zastosować multiprocessing.Process
+    workers = [multiprocessing.Process(target=process, name = str(i+1), args=(queue, days, result, day_readings, day_mode, lock )) for i in range(0,number_of_wokers)] # w docelowym rozwiązaniu musisz zastosować multiprocessing.Process
     start_time = time.time()
     for w in workers:
         w.start()
@@ -132,17 +127,13 @@ import logging
 from collections import defaultdict
 from multiprocessing import current_process, Process, Queue
 from queue import Empty
-
-# Configure logging
-# logging.basicConfig(level=logging.DEBUG, format='%(processName)s - %(levelname)s - %(message)s')
-
 from multiprocessing import current_process
 from queue import Empty
 import logging
 
-def process(queue, days, result, day_readings, day_mode, days_lock, result_lock, readings_lock, mode_lock):
+def process(queue, days, result, day_readings, day_mode, lock):
     process_name = current_process().name
-    logging.debug(f"{process_name}: Process started.")
+    logging.debug(f"{process_name}: Process started")
     countitem = 0
     local_days = set()
     local_day_readings = defaultdict(float)
@@ -152,55 +143,30 @@ def process(queue, days, result, day_readings, day_mode, days_lock, result_lock,
         try:
             data = queue.get(timeout = 0.1)
         except Empty:
-            logging.debug(f"{process_name}: Queue is empty, stopping process.")
+            logging.debug(f"{process_name}: queue is empty, stopping process")
             break
-
         countitem += 1
-
-      # Collect local days
         local_days.add(data.day)
-        # logging.debug(f"{process_name}: Added day to local_days: {data.day}")
-        
-        # Update local day_readings
         local_day_readings[data.day] += 1
-        # logging.debug(f"{process_name}: Updated local_day_readings for day {data.day}: {local_day_readings[data.day]}")
-
-        # Update local day_mode
         key = (Type.get(data.data_type) + data.day * len(Type)) * 21 + data.val
         local_day_mode[key] += 1
-        # logging.debug(f"{process_name}: Updated local_day_mode for key {key}: {local_day_mode[key]}")
-
-        # Update local result
         local_result[Help.get(data.data_type + '_COUNT') + data.day * len(Help)] += 1
         local_result[Help.get(data.data_type + '_AVG') + data.day * len(Help)] += data.val
-        # logging.debug(f"{process_name}: Updated local_result for keys COUNT and AVG: {local_result}")
 
-    # Combine local results into shared data structures
     logging.debug(f"Count item {countitem}")
 
-    # Lock for modifying the days list
-    with days_lock:
+    with lock:
         for day in local_days:
             if day not in days:
                 days.append(day)
-                # logging.debug(f"{process_name}: Added day to shared days list: {day}")
-
-    # Lock for modifying day_readings
-    with readings_lock:
         for day, count in local_day_readings.items():
             day_readings[day] += count
-            # logging.debug(f"{process_name}: Updated shared day_readings for day {day}: {day_readings[day]}")
-
-    # Lock for modifying day_mode
-    with mode_lock:
         for key, count in local_day_mode.items():
             day_mode[key] += count
-            # logging.debug(f"{process_name}: Updated shared day_mode for key {key}: {day_mode[key]}")
+        for key, value in local_result.items():
+            result[key] += value
 
-    with result_lock:
-            for key, value in local_result.items():
-                result[key] += value
-                # logging.debug(f"{process_name}: Updated shared result for key {key}: {result[key]}")   
+
 # nie zmieniać
 @app.post("/sensor-data", status_code=201)
 async def create_sensor_data(sensor_data_entry: List[SensorDataEntry]):
